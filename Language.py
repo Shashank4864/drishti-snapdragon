@@ -10,7 +10,7 @@ def get_model():
     global _model
     if _model is None:
         _model = AutoModelForCausalLM.from_pretrained(
-            "unsloth/Qwen3.5-2B-GGUF",
+            "unsloth/Qwen3.5-4B-GGUF",
             precision="Q4_0"
         )
     return _model

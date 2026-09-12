@@ -28,5 +28,11 @@ def read_image(image_path: str, instruction: str = None) -> str:
     prompt = model.tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
-    output = model.generate(prompt, images=[image_path])
+    output = model.generate(
+        prompt,
+        images=[image_path],
+        max_new_tokens=150,
+        temperature=0.3,
+        repetition_penalty=1.3
+    )
     return output.text.strip()

@@ -20,14 +20,18 @@ def simplify_and_translate(raw_text: str, target_lang: str = "Hindi") -> str:
     messages = [{
         "role": "user",
         "content": (
-            f"Rewrite the following for a low-literacy adult reader, in simple, "
-            f"short sentences, translated into {target_lang}. Keep it under 3 sentences. "
-            f"Do not add commentary, only the translated explanation.\n\n"
+            f"Translate this English text into {target_lang} in one simple sentence. "
+            f"Output ONLY the translation, nothing else.\n\n"
             f"Text: {raw_text}"
         )
     }]
     prompt = model.tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
-    output = model.generate(prompt, max_new_tokens=200)
+    output = model.generate(
+        prompt,
+        max_new_tokens=100,
+        temperature=0.3,
+        repetition_penalty=1.3
+    )
     return output.text.strip()

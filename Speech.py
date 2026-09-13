@@ -1,6 +1,5 @@
 import pyttsx3
 
-# Maps our app's language names to voice-matching keywords
 LANG_VOICE_HINTS = {
     "Hindi": ["hindi", "hi-in", "hi_in"],
     "Telugu": ["telugu", "te-in", "te_in"],

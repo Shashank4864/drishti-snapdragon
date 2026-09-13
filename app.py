@@ -2,9 +2,9 @@ import streamlit as st
 from PIL import Image
 import tempfile, time
 
-from vision import read_image
-from language import simplify_and_translate, LANG_MAP
-from speech import speak
+from Vision import read_image
+from Language import simplify_and_translate, LANG_MAP
+from Speech import speak
 
 st.set_page_config(page_title="Drishti", page_icon="👁️")
 st.title("👁️ Drishti — See it. Hear it. Understand it.")
@@ -38,7 +38,7 @@ if img_file:
     t2 = time.time()
 
     with st.spinner("Generating speech..."):
-        audio_path = speak(final_text, lang_code=LANG_MAP[lang])
+        audio_path = speak(final_text, target_lang=lang)
     t3 = time.time()
 
     st.success(final_text)

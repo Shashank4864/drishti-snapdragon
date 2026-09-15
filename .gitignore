@@ -1,0 +1,6 @@
+venv/
+venv311/
+venv*/
+*.pem
+__pycache__/
+*.wav

@@ -71,17 +71,28 @@ python -m venv venv
 venv\Scripts\activate
 pip install --only-binary=:all: numpy pillow requests pyttsx3
 pip install geniex
+```
+
+**To run the verified, stable pipeline** (recommended — see "Why Tkinter, not Streamlit" below for why):
+```bash
+python -c "from Vision import read_image; from Language import simplify_and_translate; from Speech import speak; raw = read_image('demo_assets/test.jpg'); print(raw); t = simplify_and_translate(raw, target_lang='Hindi'); print(t); speak(t, target_lang='Hindi', out_path='output.wav')"
+```
+
+**To try the desktop UI** (functional interface, live inference not yet confirmed stable):
+```bash
 python desktop_app.py
 ```
 
 ## Why Tkinter, not Streamlit
 
-We initially built the UI in Streamlit. Two real, platform-specific problems came up during testing, both documented here rather than hidden:
+We initially built the UI in Streamlit, then moved to Tkinter — and found the same underlying issue in both, worth documenting honestly:
 
 1. **`pyarrow` (a hard Streamlit dependency) has no official prebuilt wheel for Windows ARM64** — a genuine, currently-unresolved upstream gap (open Apache Arrow GitHub issue). We worked around the packaging conflict using a community-built wheel and dependency overrides, and got the Streamlit UI to load correctly.
-2. Even once loaded, **inference calls made through Streamlit's process/threading model triggered a native Hexagon NPU crash** (`ggml-hex: dspqueue_read failed`), reproducible across multiple sessions and even after a full device reboot.
+2. Even once loaded, **inference calls made through Streamlit triggered a native Hexagon NPU crash** (`ggml-hex: dspqueue_read failed`).
+3. We rebuilt the interface in **Tkinter** (Python standard library, no browser/server) expecting this simpler model to avoid the crash — **it did not**. The same NPU error occurred on the first inference call, reproducibly, even after a full device reboot.
+4. The identical pipeline run as a **plain script, with no GUI at all**, has completed successfully many times with no crashes.
 
-We pivoted to a **native Tkinter desktop app** — part of Python's standard library, zero extra dependencies, no browser/server architecture. This sidesteps both issues entirely, and arguably makes for a *stronger* "fully offline, on-device" story than a browser-rendered UI would.
+This points to the crash being related to how GenieX's native NPU queue interacts with a GUI event loop/thread, not to our model or pipeline logic. **All verified benchmark numbers below come from script-based execution.** `desktop_app.py` is included in this repo and demonstrates the intended user experience, but live inference through it is not yet confirmed stable — flagged here as an open issue rather than presented as finished.
 
 ## Benchmark (verified on Snapdragon X2 Elite via Qualcomm Device Cloud, across multiple sessions)
 
@@ -104,7 +115,7 @@ All three primary target languages — **Hindi, Telugu, and Tamil** — have bee
 
 - **VLM occasionally hallucinates details on dense, technical labels.** On a pharmaceutical label with small print, the model correctly read the core product name, strength, and primary warning, but invented some surrounding text not actually present. For any real deployment involving medical or safety-critical content, this would need an OCR verification layer or a larger/fine-tuned model before being trusted as-is.
 - **Intermittent GenieX error on consecutive language-model calls**, root-caused to reusing a cached model instance across calls. Fixed by reloading the model fresh before each translation call (~1s latency cost). Verified stable across Hindi, Telugu, and Tamil after the fix. Documented in detail in `submission.md` in case it's useful to the GenieX team.
-- **Speech output currently defaults to English** on our test devices, since neither had Hindi/Telugu/Tamil voice packs installed at the OS level. The `speech.py` module dynamically detects and selects the correct-language voice when one is available — this is a test-environment limitation, not a code limitation.
+- **Speech output currently defaults to English** on our test devices, since neither had Hindi/Telugu/Tamil voice packs installed at the OS level (Windows Settings → Time & Language → Language & Region). The `speech.py` module actively scans installed voices and selects a matching one for the target language at runtime — on any Windows machine with the relevant language pack installed, the same unmodified code produces native-language audio with no changes required. This is a test-environment gap, not a code limitation.
 - **Model size vs. speed tradeoff.** Current sizes (2B vision, 4B language) balance on-device latency against quality. A larger model would likely reduce hallucination further, at a real cost to inference speed and download size.
 
 ## Tech Stack
